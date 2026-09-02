@@ -35,7 +35,7 @@ class $modify(bestFinder, PlayLayer) {
         }
     }
 
-    void orbCalc(int percent, int dif) {
+    int orbCalc(int percent, int dif) {
         // clamp
         if (percent < 0) = 0;
         else if (percent > 100) percent = 100;
