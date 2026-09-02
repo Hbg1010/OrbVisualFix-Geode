@@ -6,7 +6,7 @@ using namespace geode::prelude;
 
 int orbCalc(int percent, int dif) {
         // clamp
-        if (percent < 0) = 0;
+        if (percent < 0) percent = 0;
         else if (percent > 100) percent = 100;
 
         // todo: obtain formulas, add dif tree here
@@ -38,7 +38,7 @@ class $modify(bestFinder, PlayLayer) {
 
         if (tempO - m_orbs < 0 && m_level->m_stars.value() > 0) {
             orbInput = orbCalc(prevBest) - tempO;
-            CCSprite oSpr = CCSprite::createWithSpriteFrameName("currencyOrbIcon_001.png");
+            CCSprite* oSpr = CCSprite::createWithSpriteFrameName("currencyOrbIcon_001.png");
             //  CurrencyRewardLayer::create(0,0x3f666666,param_2,0,0,param_3,0,0,0,0,&local_10,0);
             ArtificalCRL = ArtificalCRL::create(orbInput, 0, 0, p2, 0, 0, 0, 0, oSpr, 0);
             ArtificalCRL->setID("Artifical_CLR"_spr);
