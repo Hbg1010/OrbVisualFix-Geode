@@ -1,0 +1,14 @@
+{
+	"geode": "5.10.1",
+	"gd": {
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
+	},
+	"id": "hbg1010.orbFix",
+	"name": "Orb Visual Fix",
+	"version": "v1.0.0",
+	"developer": "Hbg1010",
+	"description": "Show orbs on levels that were uncompleted."
+}
