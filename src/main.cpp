@@ -3,6 +3,17 @@
 
 using namespace geode::prelude;
 
+
+int orbCalc(int percent, int dif) {
+        // clamp
+        if (percent < 0) = 0;
+        else if (percent > 100) percent = 100;
+
+        // todo: obtain formulas, add dif tree here
+        int o = 0;
+        return o;
+}
+
 /*
 Artifical version of the CurrencyRewardLayer. Never directly adds anything
 */
@@ -33,15 +44,5 @@ class $modify(bestFinder, PlayLayer) {
             ArtificalCRL->setID("Artifical_CLR"_spr);
             this->addChild(ArtificalCRL); // todo: see if it's ref count lowers, if not fix that
         }
-    }
-
-    int orbCalc(int percent, int dif) {
-        // clamp
-        if (percent < 0) = 0;
-        else if (percent > 100) percent = 100;
-
-        // todo: obtain formulas, add dif tree here
-        int o = 0;
-        return o;
     }
 };
