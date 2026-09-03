@@ -10,5 +10,14 @@
 	"name": "Uncompleted Orb Visual Fix",
 	"version": "v1.0.1",
 	"developer": "Hbg1010",
-	"description": "Show orbs on levels that were uncompleted."
+	"description": "Show orbs on levels that were uncompleted.",
+	"tags": ["offline"],
+	"links": {
+		"source": "https://github.com/Hbg1010/OrbVisualFix-Geode",
+		"community": "https://discord.gg/V4xQnNxfNh"
+	},
+	"issues": {
+		"url": "https://github.com/Hbg1010/OrbVisualFix-Geode/issues",
+		"info": "If you find any bugs, or have any feature requests, please post them on the github!"
+	}
 }
