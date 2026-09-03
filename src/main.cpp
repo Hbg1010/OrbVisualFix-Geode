@@ -6,10 +6,17 @@
 using namespace geode::prelude;
 
 // calculate the amount of orbs to display
-int orbCalc(int percent, int dif) {
-    // TODO: Impl fixes for main levels that have custom values (clamp SHOULD make it safe but still)
+int orbCalc(int percent, int dif, bool isMainLevel) {
+    if (isMainLevel && dif < 14) {
+        float scalar = 25.f + 25*dif;
+        return percent == 100 
+            ? scalar 
+            : scalar * .8f * (float) percent / 100.f;
+    }
+
     const float orbVals[10] = {0.f, 50.f, 75.f, 125.f, 175.f, 225.f, 275.f, 350.f, 425.f, 500.f};
     dif = std::clamp(dif, 1, 10) - 1;
+
     return (int) (percent == 100
             ? orbVals[dif] 
             : orbVals[dif] * .8f * (float) percent / 100.f);
@@ -32,6 +39,7 @@ class $modify(VisualFixPL, PlayLayer) {
         int currentBest = 0;
         bool obtainedAllOrbs = false;
         bool isSpecial = false;
+        bool isMainLevel = false;
     };
 
     bool init(GJGameLevel* p0, bool p1, bool p2) {
@@ -42,6 +50,15 @@ class $modify(VisualFixPL, PlayLayer) {
         int dif = m_level->m_stars.value();
         if (dif <= 0) return true;
 
+        const int id = p0->m_levelID;
+        // main level stuff bc rob made calcs weird for this
+        if ((id >= 1 && id <= 22) || id == 3001 || (id >= 5001 && id <= 5004)) {
+            m_fields->isMainLevel = true;
+            log::debug("weird mode");
+        } else {
+            m_fields->isMainLevel = false;
+        }
+
         GameStatsManager* gsm = GameStatsManager::sharedState();
         const int levelOrbs = gsm->getAwardedCurrencyForLevel(p0);
 
@@ -50,7 +67,7 @@ class $modify(VisualFixPL, PlayLayer) {
         if (m_level->m_dailyID != 0 || m_level->m_gauntletLevel) {
                 m_fields->isSpecial = true;
         }
-        if (levelOrbs == orbCalc(100, dif)) {
+        if (levelOrbs == orbCalc(100, dif, m_fields->isMainLevel)) {
             m_fields->obtainedAllOrbs = true;
         } else {
             m_fields->obtainedAllOrbs = false;
@@ -68,11 +85,11 @@ class $modify(VisualFixPL, PlayLayer) {
             GameStatsManager* gsm = GameStatsManager::sharedState();
             const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
 
-            int tempO = orbCalc(getCurrentPercentInt(),dif);
+            int tempO = orbCalc(getCurrentPercentInt(),dif, m_fields->isMainLevel);
             if (tempO - levelOrbs < 0) {
                 int prevBest = m_fields->currentBest;
                 p0 = true;
-                p1 = tempO - orbCalc(prevBest, dif);
+                p1 = tempO - orbCalc(prevBest, dif, m_fields->isMainLevel);
 
                 // calculate collected diamonds restricting to just levels that have diamonds
                 int diaInput = 0;
@@ -85,40 +102,7 @@ class $modify(VisualFixPL, PlayLayer) {
                 }
             }
         } 
-        
         PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
-        
-        
-        
-
-            // // get positions TODO
-            // CCSize screenSize = CCDirector::sharedDirector()->getWinSize();
-            // CCPoint pos = {screenSize.width/2.f, screenSize.height/2.f};
-
-            // CurrencyRewardLayer* ACRL = createArtificalCRL(orbInput, diaInput, pos, CurrencyRewardType::Default, .9);
-            // ACRL->setZOrder(99);
-            // ACRL->setID("Artifical_CurrencyRewardLayer"_spr);
-            // this->addChild(ACRL);
-
-            // // lord help the decomp output is worse than the song dance monkey its actually so bad
-
-            // // _ccColor4B color = {0,0,0,0};
-            // // CCLayerColor* CCLC = CCLayerColor::create(color);
-            // // this->addChild(CCLC, 99);
-            // // CCFiniteTimeAction* FTA = (CCFiniteTimeAction*) CCFadeTo::create(0.3, 100);
-            // // CCDelayTime* CCDT = CCDelayTime::create(1.6f);
-            // // CCFadeTo* CCFT = CCFadeTo::create(.4f, 0);
-            // // CCCallFunc* uVar19 = CCCallFunc::create(CCLC, callfunc_selector(CCNode::removeMeAndCleanup));   
-            // // CCAction* pCVar21 = CCSequence::create(FTA, CCDT, CCFT, uVar19);
-
-            // // CCLC->runAction(pCVar21);
-
-            // // play sounds 
-            // FMODAudioEngine* fmod = FMODAudioEngine::sharedEngine();
-            // fmod->playEffect(diaInput > 0 ? "gold02.ogg" : "magicExplosion.ogg");
-
-            // // reset player's best
-            // m_fields->currentBest = getCurrentPercentInt();
     }
 
     /*
@@ -141,6 +125,10 @@ class $modify(VisualFixPL, PlayLayer) {
     void setCompleted() {
         m_fields->currentBest = 100;
     }
+
+    bool mainLevel() {
+        return m_fields->isMainLevel;
+    }
 };
 
 /*
@@ -156,7 +144,7 @@ class $modify(ArtificalCRL, CurrencyRewardLayer) {
                 if (VPL->hasAllOrbs()) {
                     int dif = std::max(stars, moons);
                     int prevBest = VPL->currentBest();
-                    orbs += orbCalc(100, dif) - orbCalc(prevBest, dif);
+                    orbs += orbCalc(100, dif, VPL->mainLevel()) - orbCalc(prevBest, dif, VPL->mainLevel());
                     if (VPL->isSpecial()) {
                         diamonds += diamondsCalc(100, dif) - diamondsCalc(prevBest, dif);
                     }
