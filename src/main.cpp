@@ -44,11 +44,14 @@ class $modify(VisualFixPL, PlayLayer) {
 
         GameStatsManager* gsm = GameStatsManager::sharedState();
         const int levelOrbs = gsm->getAwardedCurrencyForLevel(p0);
-        if (levelOrbs != orbCalc(100, dif)) {
-            m_fields->obtainedAllOrbs = true;
-            if (m_level->m_dailyID != 0 || m_level->m_gauntletLevel) {
+
+        // for end screen
+        // checks for if it can give diamonds
+        if (m_level->m_dailyID != 0 || m_level->m_gauntletLevel) {
                 m_fields->isSpecial = true;
-            }
+        }
+        if (levelOrbs == orbCalc(100, dif)) {
+            m_fields->obtainedAllOrbs = true;
         } else {
             m_fields->obtainedAllOrbs = false;
              m_fields->isSpecial = false;
@@ -59,44 +62,63 @@ class $modify(VisualFixPL, PlayLayer) {
     }
 
     void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
-        PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
-        
         int dif = m_level->m_stars.value();
-        if (dif <= 0) return;
-        GameStatsManager* gsm = GameStatsManager::sharedState();
-        const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
 
-        int tempO = orbCalc(getCurrentPercentInt(),dif);
-        if (tempO - levelOrbs < 0) {
-            int prevBest = m_fields->currentBest;
-            int orbInput = tempO - orbCalc(prevBest, dif);
+        if (dif > 0) {
+            GameStatsManager* gsm = GameStatsManager::sharedState();
+            const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
 
-            // calculate collected diamonds restricting to just levels that have diamonds
-            int diaInput = 0;
-            if (m_fields->isSpecial) {
-                int collectedDia = gsm->getAwardedDiamondsForLevel(m_level);
-                int diaNow = diamondsCalc(getCurrentPercentInt(), dif);
-                if (diaNow - collectedDia < 0) {
-                    diaInput = diamondsCalc(getCurrentPercentInt(), dif) - diamondsCalc(prevBest, dif);
+            int tempO = orbCalc(getCurrentPercentInt(),dif);
+            if (tempO - levelOrbs < 0) {
+                int prevBest = m_fields->currentBest;
+                p0 = true;
+                p1 = tempO - orbCalc(prevBest, dif);
+
+                // calculate collected diamonds restricting to just levels that have diamonds
+                int diaInput = 0;
+                if (m_level->m_dailyID != 0 || m_level->m_gauntletLevel) {
+                    int collectedDia = gsm->getAwardedDiamondsForLevel(m_level);
+                    int diaNow = diamondsCalc(getCurrentPercentInt(), dif);
+                    if (diaNow - collectedDia < 0) {
+                        p2 = diamondsCalc(getCurrentPercentInt(), dif) - diamondsCalc(prevBest, dif);
+                    }
                 }
             }
+        } 
+        
+        PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
+        
+        
+        
 
-            // get positions TODO
-            CCSize screenSize = CCDirector::sharedDirector()->getWinSize();
-            CCPoint pos = {screenSize.width/2.f, screenSize.height/2.f};
+            // // get positions TODO
+            // CCSize screenSize = CCDirector::sharedDirector()->getWinSize();
+            // CCPoint pos = {screenSize.width/2.f, screenSize.height/2.f};
 
-            CurrencyRewardLayer* ACRL = createArtificalCRL(orbInput, diaInput, pos, CurrencyRewardType::Default, .9);
-            ACRL->setZOrder(99);
-            ACRL->setID("Artifical_CurrencyRewardLayer"_spr);
-            this->addChild(ACRL);
+            // CurrencyRewardLayer* ACRL = createArtificalCRL(orbInput, diaInput, pos, CurrencyRewardType::Default, .9);
+            // ACRL->setZOrder(99);
+            // ACRL->setID("Artifical_CurrencyRewardLayer"_spr);
+            // this->addChild(ACRL);
 
-            // play sounds 
-            FMODAudioEngine* fmod = FMODAudioEngine::sharedEngine();
-            fmod->playEffect(diaInput > 0 ? "gold02.ogg" : "magicExplosion.ogg");
+            // // lord help the decomp output is worse than the song dance monkey its actually so bad
 
-            // reset player's best
-            m_fields->currentBest = getCurrentPercentInt();
-        }
+            // // _ccColor4B color = {0,0,0,0};
+            // // CCLayerColor* CCLC = CCLayerColor::create(color);
+            // // this->addChild(CCLC, 99);
+            // // CCFiniteTimeAction* FTA = (CCFiniteTimeAction*) CCFadeTo::create(0.3, 100);
+            // // CCDelayTime* CCDT = CCDelayTime::create(1.6f);
+            // // CCFadeTo* CCFT = CCFadeTo::create(.4f, 0);
+            // // CCCallFunc* uVar19 = CCCallFunc::create(CCLC, callfunc_selector(CCNode::removeMeAndCleanup));   
+            // // CCAction* pCVar21 = CCSequence::create(FTA, CCDT, CCFT, uVar19);
+
+            // // CCLC->runAction(pCVar21);
+
+            // // play sounds 
+            // FMODAudioEngine* fmod = FMODAudioEngine::sharedEngine();
+            // fmod->playEffect(diaInput > 0 ? "gold02.ogg" : "magicExplosion.ogg");
+
+            // // reset player's best
+            // m_fields->currentBest = getCurrentPercentInt();
     }
 
     /*
@@ -111,6 +133,7 @@ class $modify(VisualFixPL, PlayLayer) {
         return m_fields->currentBest;
     }
 
+    // note: only checks for 
     bool isSpecial() {
         return m_fields->isSpecial;
     }
@@ -137,11 +160,11 @@ class $modify(ArtificalCRL, CurrencyRewardLayer) {
                     if (VPL->isSpecial()) {
                         diamonds += diamondsCalc(100, dif) - diamondsCalc(prevBest, dif);
                     }
-
                     VPL->setCompleted();
                 }
             }
         }
+
         // runs default function with possible added options
         return CurrencyRewardLayer::init(orbs, stars, moons, diamonds, demonKey, keyCount, shardType, shardsCount, position, rewardType, yoffset, time);
     }
