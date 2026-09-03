@@ -11,40 +11,35 @@ int orbCalc(int percent, int dif) {
     dif = std::clamp(dif, 1, 10) - 1;
     return (int) (percent == 100 
             ? orbVals[dif] 
-            : orbVals[dif] * .8 * (float) percent / 100.f);
+            : orbVals[dif] * .8f * (float) percent / 100.f);
+}
+
+// calculate diamonds player would have earned
+int diamondsCalc(int percent, int dif) {
+    if (dif <= 1) return 0;
+    dif = std::clamp(dif, 2, 10);
+    return (2 + dif) * percent / 100;
 }
 
 /*
 Artifical version of the CurrencyRewardLayer. Never directly adds anything
 */
 class $modify(ArtificalCRL, CurrencyRewardLayer) {
-    struct Fields {
-        bool visualOnly = false;
-    };
+    // struct Fields {
+    //     bool visualOnly = false;
+    // };
 
     bool init(int orbs, int stars, int moons, int diamonds, CurrencySpriteType demonKey, 
                 int keyCount, CurrencySpriteType shardType, int shardsCount, CCPoint position, 
                 CurrencyRewardType rewardType, float yoffset, float time) {
         if (!CurrencyRewardLayer::init(orbs, stars, moons, diamonds, demonKey, keyCount, shardType, shardsCount, position, rewardType, yoffset, time)) return false;
-        log::debug("{}", position);
+        // geode::log::debug("{}", position);
         return true;
     }
 
-    #ifndef GEODE_IS_WINDOWS
-    void incrementCount(int count) {
-        if (m_fields->visualOnly) count = 0;
-        CurrencyRewardLayer::incrementCount(count);
-    }
-    # endif
-
-    void setVisualOnly(bool realOrFake) {
-        m_fields->visualOnly = realOrFake;
-    }
-
+    // i just wanted to shorten this constructor lol
     static ArtificalCRL* createArtifical(int orbs, int diamonds, CCPoint position, CurrencyRewardType rewardType, float time) {
         ArtificalCRL* temp = reinterpret_cast<ArtificalCRL*>(CurrencyRewardLayer::create(orbs, 0, 0, diamonds, CurrencySpriteType::Icon, 0, CurrencySpriteType::Icon, 0, position, rewardType, 0, time));
-        if (temp != nullptr) temp->setVisualOnly(true);
-        log::debug("a");
         return temp;
     }
 };
@@ -61,25 +56,43 @@ class $modify(bestFinder, PlayLayer) {
     }
 
     void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
-        int prevBest = m_fields->currentBest;
-        log::debug("prevBest: {}", prevBest);
-
         PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
-        GameStatsManager* gsm = GameStatsManager::sharedState();
-        const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
-        log::debug("orbs: {}", levelOrbs);
-
+        
         int dif = m_level->m_stars.value();
         if (dif <= 0) return;
+        GameStatsManager* gsm = GameStatsManager::sharedState();
+        const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
 
         int tempO = orbCalc(getCurrentPercentInt(),dif);
         if (tempO - levelOrbs < 0) {
-            int orbInput = orbCalc(prevBest, dif) - tempO;
-            CCPoint pos = {210.79822, 194.24483};
-            ArtificalCRL* ACRL = ArtificalCRL::createArtifical(orbInput, 0, pos, CurrencyRewardType::Default, .9);
+            int prevBest = m_fields->currentBest;
+            int orbInput = tempO - orbCalc(prevBest, dif);
+
+            // calculate collected diamonds restricting to just levels that have diamonds
+            int diaInput = 0;
+            if ((m_level->m_dailyID != 0 || m_level->m_gauntletLevel)) {
+                int collectedDia = gsm->getAwardedDiamondsForLevel(m_level);
+                int diaNow = diamondsCalc(getCurrentPercentInt(), dif);
+                if (diaNow - collectedDia < 0) {
+                    diaInput = diamondsCalc(getCurrentPercentInt(), dif) - diamondsCalc(prevBest, dif);
+                }
+            }
+
+            // get positions TODO
+            CCSize screenSize = CCDirector::sharedDirector()->getWinSize();
+            CCPoint pos = {screenSize.width/2.f, screenSize.height/2.f};
+
+            ArtificalCRL* ACRL = ArtificalCRL::createArtifical(orbInput, diaInput, pos, CurrencyRewardType::Default, .9);
+            ACRL->setZOrder(99);
             ACRL->setID("Artifical_CurrencyRewardLayer"_spr);
             this->addChild(ACRL);
+
+            // play sounds 
+            FMODAudioEngine* fmod = FMODAudioEngine::sharedEngine();
+            fmod->playEffect(diaInput > 0 ? "gold02.ogg" : "magicExplosion.ogg");
+
+            // reset player's best
+            m_fields->currentBest = getCurrentPercentInt();
         }
-        m_fields->currentBest = getCurrentPercentInt();
     }
 };
