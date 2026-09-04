@@ -140,7 +140,7 @@ class $modify(ArtificalCRL, CurrencyRewardLayer) {
                 CurrencyRewardType rewardType, float yoffset, float time) {
         // checks if the level is rated and if the level has been completed before. Then alters visual case.
         if (stars > 0 || moons > 0) {
-            if (VisualFixPL* VPL = reinterpret_cast<VisualFixPL*>(PlayLayer::get())) {
+            if (VisualFixPL* VPL = geode::cast::modify_cast<VisualFixPL*>(PlayLayer::get())) {
                 if (VPL->hasAllOrbs()) {
                     int dif = std::max(stars, moons);
                     int prevBest = VPL->currentBest();
