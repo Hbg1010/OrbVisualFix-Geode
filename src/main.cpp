@@ -80,7 +80,7 @@ class $modify(VisualFixPL, PlayLayer) {
 
     void showNewBest(bool p0, int p1, int p2, bool p3, bool p4, bool p5) {
         int dif = m_level->m_stars.value();
-
+        log::debug("{}", m_level->getNormalPercent());
         if (dif > 0) {
             GameStatsManager* gsm = GameStatsManager::sharedState();
             const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
@@ -102,6 +102,7 @@ class $modify(VisualFixPL, PlayLayer) {
                 }
             }
         } 
+        m_fields->currentBest = m_level->getNormalPercent();
         PlayLayer::showNewBest(p0, p1, p2, p3, p4, p5);
     }
 
