@@ -1,5 +1,5 @@
 # Uncompleted Orb Visual Fix 
-_jesus that does not roll of the toung lol_
+_jesus that does not roll of the tongue lol_
 
 If you've ever uncompleted a level before because you accidentially hacked it, you've probably noticed that orbs and diamonds are not reset. This mod restores the visual effects for gaining orbs on those uncompleted levels; no unintended stats are collected.
 
