@@ -180,21 +180,21 @@ class $modify(ArtificalCRL, CurrencyRewardLayer) {
     }
 };
 
-class $modify(ELL, EndLevelLayer) {
-    void customSetup() {
-        if ((m_stars > 0 || m_moons > 0) && Mod::get()->getSettingValue<bool>("enable")) {
-            if (VisualFixPL* VPL = geode::cast::modify_cast<VisualFixPL*>(PlayLayer::get())) {
-                if (VPL->hasAllOrbs()) {
-                    int dif = std::max(m_stars, m_moons);
-                    int prevBest = VPL->currentBest();
-                    m_orbs = orbCalc(100, dif, VPL->mainLevel()) - orbCalc(prevBest, dif, VPL->mainLevel());
-                    if (VPL->isSpecial()) {
-                        m_diamonds = diamondsCalc(100, dif) - diamondsCalc(prevBest, dif);
-                    }
-                    VPL->setCompleted();
-                }
-            }
-        }
-        EndLevelLayer::customSetup();
-    }
-};
+// class $modify(ELL, EndLevelLayer) {
+//     void playCurrencyEffect(float len) {
+//         if ((m_stars > 0 || m_moons > 0) && Mod::get()->getSettingValue<bool>("enable")) {
+//             if (VisualFixPL* VPL = geode::cast::modify_cast<VisualFixPL*>(PlayLayer::get())) {
+//                 if (VPL->hasAllOrbs()) {
+//                     int dif = std::max(m_stars, m_moons);
+//                     int prevBest = VPL->currentBest();
+//                     m_orbs = orbCalc(100, dif, VPL->mainLevel()) - orbCalc(prevBest, dif, VPL->mainLevel());
+//                     if (VPL->isSpecial()) {
+//                         m_diamonds = diamondsCalc(100, dif) - diamondsCalc(prevBest, dif);
+//                     }
+//                     VPL->setCompleted();
+//                 }
+//             }
+//         }
+//         EndLevelLayer::playCurrencyEffect(len);
+//     }
+// };

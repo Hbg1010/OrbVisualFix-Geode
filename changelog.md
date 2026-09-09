@@ -3,7 +3,6 @@
 - Added settings
     - Disable diamonds
     - Option to hide the amount of rewards you get in normal
-- Fixed endscreen issues
 
 # 1.0.2: 
 - made the mod work
