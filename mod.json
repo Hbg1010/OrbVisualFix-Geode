@@ -8,7 +8,7 @@
 	},
 	"id": "hbg1010.orbfix",
 	"name": "Uncompleted Orb Visual Fix",
-	"version": "v1.0.3",
+	"version": "v1.0.4",
 	"developer": "Hbg1010",
 	"description": "Show orbs on levels that were uncompleted.",
 	"tags": ["offline"],
