@@ -8,7 +8,7 @@
 	},
 	"id": "hbg1010.orbfix",
 	"name": "Uncompleted Orb Visual Fix",
-	"version": "v1.0.4",
+	"version": "v1.0.5",
 	"developer": "Hbg1010",
 	"description": "Show orbs on levels that were uncompleted.",
 	"tags": ["offline"],
@@ -36,7 +36,7 @@
 			"type": "bool",
 			"name": "Hide rewards in normal",
 			"default": false,
-			"description": "Hides the text with the amount of rewards you got"
+			"description": "Hides the text with the amount of rewards you got."
 		}
 	}
 }

@@ -1,5 +1,4 @@
 #include <Geode/Geode.hpp>
-#include <Geode/modify/CurrencyRewardLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/EndLevelLayer.hpp>
 #include <algorithm>
@@ -7,7 +6,7 @@
 
 using namespace geode::prelude;
 
-// calculate the amount of orbs to display
+// calculate the amount of orbs to display. I could replace with built in functions but these do their jobs
 int orbCalc(int percent, int dif, bool isMainLevel) {
     if (isMainLevel && dif < 14) {
         float scalar = 25.f + 25*dif;
@@ -24,6 +23,11 @@ int orbCalc(int percent, int dif, bool isMainLevel) {
             : orbVals[dif] * .8f * (float) percent / 100.f);
 }
 
+// gets the completed orb count
+int baseOrbCount(int dif, bool isMainLevel) {
+    return orbCalc(100, dif, isMainLevel);
+}
+
 // calculate diamonds player would have earned
 int diamondsCalc(int percent, int dif) {
     if (dif <= 1) return 0;
@@ -31,16 +35,14 @@ int diamondsCalc(int percent, int dif) {
     return (2 + dif) * percent / 100;
 }
 
-// i just wanted to shorten this constructor lol
-CurrencyRewardLayer* createArtificalCRL(int orbs, int diamonds, CCPoint position, CurrencyRewardType rewardType, float time) {
-    return CurrencyRewardLayer::create(orbs, 0, 0, diamonds, CurrencySpriteType::Icon, 0, CurrencySpriteType::Icon, 0, position, rewardType, 0, time);
+int baseDiaCount(int dif) {
+    return diamondsCalc(100, dif);
 }
 
 class $modify(VisualFixPL, PlayLayer) {
     struct Fields {
         int currentBest = 0;
         bool obtainedAllOrbs = false;
-        bool isSpecial = false;
     };
 
     bool init(GJGameLevel* p0, bool p1, bool p2) {
@@ -54,8 +56,7 @@ class $modify(VisualFixPL, PlayLayer) {
         GameStatsManager* gsm = GameStatsManager::sharedState();
         const int levelOrbs = gsm->getAwardedCurrencyForLevel(p0);
 
-        m_fields->isSpecial = (m_level->m_dailyID != 0 || m_level->m_gauntletLevel); 
-        m_fields->obtainedAllOrbs = (levelOrbs == orbCalc(100, dif, mainLevel()));
+        m_fields->obtainedAllOrbs = (levelOrbs == baseOrbCount(dif, mainLevel()));
 
         return true;
     }
@@ -63,19 +64,21 @@ class $modify(VisualFixPL, PlayLayer) {
     void showNewBest(bool showRewards, int orbs, int diamonds, bool p3, bool p4, bool p5) {
         int dif = m_level->m_stars.value();
         bool isFake = false;
+
         if (dif > 0 && Mod::get()->getSettingValue<bool>("enable")) {
             GameStatsManager* gsm = GameStatsManager::sharedState();
             const int levelOrbs = gsm->getAwardedCurrencyForLevel(m_level);
 
-            int tempO = orbCalc(getCurrentPercentInt(),dif, mainLevel());
+            // clamp because some levels may hit 100% bc of incorrect timing
+            int tempO = orbCalc(std::clamp(getCurrentPercentInt(),0,99), dif, mainLevel());
             if (tempO - levelOrbs < 0) {
                 if (Mod::get()->getSettingValue<bool>("hideNewRewardTxt")) isFake = true;
                 int prevBest = m_fields->currentBest;
-                // showRewards = true;
+
                 orbs = tempO - orbCalc(prevBest, dif, mainLevel());
 
                 // calculate collected diamonds restricting to just levels that have diamonds
-                if (Mod::get()->getSettingValue<bool>("enableDiamonds") && m_fields->isSpecial) {
+                if (Mod::get()->getSettingValue<bool>("enableDiamonds") && isSpecial()) {
                     int collectedDia = gsm->getAwardedDiamondsForLevel(m_level);
                     int diaNow = diamondsCalc(getCurrentPercentInt(), dif);
                     if (diaNow - collectedDia < 0) {
@@ -96,7 +99,7 @@ class $modify(VisualFixPL, PlayLayer) {
                 for (int i = 0; i < children->count()-1; i++) {
                     CCNode* child = static_cast<CCNode*>(children->objectAtIndex(i));
                     if (auto txt = typeinfo_cast<CCLabelBMFont*>(child)) {
-                        std::string_view labelTxt = std::string_view(txt->getString());
+                        std::string_view labelTxt(txt->getString());
                         if (utils::string::startsWith(labelTxt, "+") && labelTxt.size() <= 4) txt->setVisible(false);
                     }
                 }
@@ -133,9 +136,8 @@ class $modify(VisualFixPL, PlayLayer) {
         return m_fields->currentBest;
     }
 
-    // note: only checks for 
     bool isSpecial() {
-        return m_fields->isSpecial;
+        return (m_level->m_dailyID != 0 || m_level->m_gauntletLevel);
     }
 
     void setCompleted() {
@@ -147,47 +149,24 @@ class $modify(VisualFixPL, PlayLayer) {
     }
 };
 
-/*
-Artifical version of the CurrencyRewardLayer. Never directly adds anything
-*/
-class $modify(ArtificalCRL, CurrencyRewardLayer) {
-    bool init(int orbs, int stars, int moons, int diamonds, CurrencySpriteType demonKey, 
-                int keyCount, CurrencySpriteType shardType, int shardsCount, CCPoint position, 
-                CurrencyRewardType rewardType, float yoffset, float time) {
-        // checks if the level is rated and if the level has been completed before. Then alters visual case.
-        if ((stars > 0 || moons > 0) && Mod::get()->getSettingValue<bool>("enable")) {
-            if (VisualFixPL* VPL = geode::cast::modify_cast<VisualFixPL*>(PlayLayer::get())) {
+class $modify(ELL, EndLevelLayer) {
+    void customSetup() {
+        int dif = m_playLayer->m_level->m_stars.value();
+
+        // checks to see if the orb visuals should be used
+        if (dif > 0 && !m_playLayer->m_isPracticeMode 
+            && !m_playLayer->m_isTestMode && Mod::get()->getSettingValue<bool>("enable")) {
+            if (VisualFixPL* VPL = geode::cast::modify_cast<VisualFixPL*>(m_playLayer)) {
                 if (VPL->hasAllOrbs()) {
-                    int dif = std::max(stars, moons);
                     int prevBest = VPL->currentBest();
-                    orbs += orbCalc(100, dif, VPL->mainLevel()) - orbCalc(prevBest, dif, VPL->mainLevel());
+                    m_playLayer->m_orbs = baseOrbCount(dif, VPL->mainLevel()) - orbCalc(prevBest, dif, VPL->mainLevel());
                     if (VPL->isSpecial()) {
-                        diamonds += diamondsCalc(100, dif) - diamondsCalc(prevBest, dif);
+                        m_playLayer->m_diamonds = baseDiaCount(dif) - diamondsCalc(prevBest, dif);
                     }
                     VPL->setCompleted();
                 }
-            }
+            } 
         }
-        // runs default function with possible added options
-        return CurrencyRewardLayer::init(orbs, stars, moons, diamonds, demonKey, keyCount, shardType, shardsCount, position, rewardType, yoffset, time);
+        EndLevelLayer::customSetup();
     }
 };
-
-// class $modify(ELL, EndLevelLayer) {
-//     void playCurrencyEffect(float len) {
-//         if ((m_stars > 0 || m_moons > 0) && Mod::get()->getSettingValue<bool>("enable")) {
-//             if (VisualFixPL* VPL = geode::cast::modify_cast<VisualFixPL*>(PlayLayer::get())) {
-//                 if (VPL->hasAllOrbs()) {
-//                     int dif = std::max(m_stars, m_moons);
-//                     int prevBest = VPL->currentBest();
-//                     m_orbs = orbCalc(100, dif, VPL->mainLevel()) - orbCalc(prevBest, dif, VPL->mainLevel());
-//                     if (VPL->isSpecial()) {
-//                         m_diamonds = diamondsCalc(100, dif) - diamondsCalc(prevBest, dif);
-//                     }
-//                     VPL->setCompleted();
-//                 }
-//             }
-//         }
-//         EndLevelLayer::playCurrencyEffect(len);
-//     }
-// };

@@ -1,7 +1,8 @@
-# 1.0.4
-- cleaned up code + removed potential UB from 1.0.3's c90 aaa code
+# 1.0.5
+- Fixed endscreen
+- Cleaned code
 
-# 1.0.3
+# 1.0.3 + 1.0.4
 - fixed the issue with new best and similar text being replaced by new rewards
 - Added settings
     - Disable diamonds
