@@ -45,8 +45,8 @@ class $modify(VisualFixPL, PlayLayer) {
         bool obtainedAllOrbs = false;
     };
 
-    bool init(GJGameLevel* p0, bool p1, bool p2) {
-        if (!PlayLayer::init(p0,p1,p2)) return false;
+    bool init(GJGameLevel* p0, bool p1) {
+        if (!PlayLayer::init(p0,p1)) return false;
         if (!m_isPlatformer) m_fields->currentBest = p0->getNormalPercent();
 
         // early returned if unrated
